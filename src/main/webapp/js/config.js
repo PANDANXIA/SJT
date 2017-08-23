@@ -1,5 +1,5 @@
 /**
  * 
  */
-var domainName = 'localhost:8888/';
+var domainName = 'localhost:8080/';
 domainName = 'http://www.onetoend.cn';
