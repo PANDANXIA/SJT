@@ -12,21 +12,44 @@ var checkCode = function(obj,label){
 
 	}
 }
-
-function codeUnique(config){
-	var dtd = $.Deferred(); 
-	
-	if('' == config.code ){
-		app.alert(config.which+":"+config.code + ",不能为空",1);
-		return dtd.promise();
+var readOnly = function(id){
+	$("#" + id).removeClass('on');
+	$("#" + id).parent('div').css('border', 'none');
+	$("#" + id).css('background', 'none');
+	$("#" + id).attr('readonly', 'readonly');
+}
+function form_empty(config){
+	m_loading.remove();
+    if(config.code==""  )
+    {app.alert(config.which+":"+config.code + "不能为空",1);
+	 return true;
+    }
+    else if(config.which="商铺名称")
+    {if(config.code=="未选择"  )
+	{app.alert("请选择"+config.which,1);
+	 return true;
 	}
+    }
+    else
+    {return false;}
+}
+function codeUnique(config){
+	m_loading.remove();
+//	if(''!= config.code ){
+		var dtd = $.Deferred(); 
 	if(!onlyEnglishAndDecimal(config.code)){
 		app.alert("编码:" + config.code +",只能有数字和英文字母组成",1);
-		return dtd.promise();
-		
+		dtd.reject();
+		return dtd.promise();	
 	}
+	
+	if(  !config.extra){
+		dtd.resolve();
+		return dtd.promise();
+	}
+	
 				$.ajax({	
-					   url: "/hdk/problem/codeUnique",
+					   url: domainName + "/hdk/problem/codeUnique",
 					   data:{
 					   	      tableName:config.tableName
 					         ,codeField:config.codeField
@@ -39,6 +62,7 @@ function codeUnique(config){
 						   var i = data[0];
 						   if(i.count > 0 ){
 							   app.alert(config.which+":"+config.code+"重复，请重新编码",1);
+							   dtd.reject();
 						   }else{
 							   dtd.resolve();
 						   }
@@ -48,19 +72,32 @@ function codeUnique(config){
 					   }				   
 				});
 				return dtd.promise();
+//	}
+				
+}
+function codeUnique2(config){
+	var dtd = $.Deferred(); 
+	if(!onlyEnglishAndDecimal(config.code)){
+		app.alert("编码:" + config.code +",只能有数字和英文字母组成",1);
+		return dtd.promise();
+		
+	}
+				return dtd.promise();
 }
 
- function loadCombobox(id , table,isAll){
+ function loadCombobox(id , table,isAll,includeDefault){
+ //	m_loading.remove();
+ 	m_loading.html();
 	 var time = (new Date().getTime());
 	 $.ajax({ 
-		 url: '/hdk/state/getSome',
+		 url: domainName + '/hdk/state/getSome',
 		 type:'get',
 		 data:{
 				'ownerTable':table,
 				'time':time,
 				'isAll':isAll
 		 },
-	 		jsonpCallback:"state_"+time+"_getSome",
+	 		//jsonpCallback:"state_"+time+"_getSome",
 	 		jsonp: "callback",
 		 dataType:'jsonp',
 		 success:function(rs){
@@ -74,7 +111,7 @@ function codeUnique(config){
 				 }else{
 					 str = str + ","+item.staName;
 				 }
-				 
+				 if(includeDefault == true || undefined == includeDefault ){
 				 if(undefined!=item.isDefault&& 1==item.isDefault){
 					 if($('#'+id).is('div')){
 						 $('#'+id).html(item.staName);
@@ -82,16 +119,27 @@ function codeUnique(config){
 						 $('#'+id).val(item.staName);
 					 }
 				 }
-				 
+				 }
 			 });
 			 $('#'+id).attr("data-select",str);
+			 m_loading.remove();
+			 if(id=="install_getdata")
+			 	{getnewwork();}
 			 state_getSome = null ;
 		 },
 		 error:function(rs){
 		 }
 	 });	
  }
+function getnewwork()
+         {
+             var networkArr=$("#install_getdata").attr("data-select").split(",");
+             for(i=0;i<networkArr.length;i++)
+             {var obj="chknetw"+i;
+               $("#getnetwork").append('<div class="i-choice-rowchk"><div id='+obj+'  onclick="qt.selectNetwork(this)"></div><p>'+networkArr[i]+'</p></div>');
+             }
 
+         }
  function isUndefined( v ){
 	   return (undefined == v?"":v);
 }
@@ -169,4 +217,7 @@ function ajaxLoadEnd(){
 	$("#loading").remove();    
 	
 	}
+function isNullOrUndefined( v ) {
+	   return ("" != v && null != v && undefined != v);
+}
  
